@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NexusChat</title>
-  <!-- PeerJS para conexiones P2P en tiempo real -->
+  <!-- PeerJS para mensajería y llamadas WebRTC -->
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
   <style>
     * {
@@ -44,42 +44,12 @@
       box-shadow: 0 8px 24px rgba(0,0,0,0.4);
     }
 
-    .auth-card h2 {
-      text-align: center;
-      margin-bottom: 8px;
-      color: #f2f3f5;
-    }
-
-    .auth-card p {
-      text-align: center;
-      color: #b5bac1;
-      font-size: 14px;
-      margin-bottom: 20px;
-    }
-
-    .form-group {
-      margin-bottom: 16px;
-    }
-
-    .form-group label {
-      display: block;
-      font-size: 12px;
-      font-weight: bold;
-      text-transform: uppercase;
-      color: #b5bac1;
-      margin-bottom: 8px;
-    }
-
-    .form-group input {
-      width: 100%;
-      padding: 10px;
-      background: #1e1f22;
-      border: 1px solid #111214;
-      border-radius: 4px;
-      color: #fff;
-      outline: none;
-    }
-
+    .auth-card h2 { text-align: center; margin-bottom: 8px; color: #f2f3f5; }
+    .auth-card p { text-align: center; color: #b5bac1; font-size: 14px; margin-bottom: 20px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 12px; font-weight: bold; text-transform: uppercase; color: #b5bac1; margin-bottom: 8px; }
+    .form-group input { width: 100%; padding: 10px; background: #1e1f22; border: 1px solid #111214; border-radius: 4px; color: #fff; outline: none; }
+    
     .auth-btn {
       width: 100%;
       padding: 12px;
@@ -91,17 +61,10 @@
       cursor: pointer;
       transition: background 0.2s;
     }
+    .auth-btn:hover { background: #4752c4; }
 
-    .auth-btn:hover {
-      background: #4752c4;
-    }
-
-    /* INTERFAZ PRINCIPAL */
-    #app-container {
-      display: flex;
-      width: 100vw;
-      height: 100vh;
-    }
+    /* LAYOUT PRINCIPAL */
+    #app-container { display: flex; width: 100vw; height: 100vh; }
 
     .servers-bar {
       width: 72px;
@@ -124,15 +87,13 @@
       cursor: pointer;
       font-weight: bold;
       transition: all 0.2s;
+      position: relative;
     }
 
-    .server-icon:hover, .server-icon.active {
-      border-radius: 16px;
-      background-color: #5865f2;
-    }
-
+    .server-icon:hover, .server-icon.active { border-radius: 16px; background-color: #5865f2; }
     .add-btn { background-color: #23a55a; color: #fff; }
     .join-btn { background-color: #4752c4; color: #fff; }
+    .plus-btn { background-color: #f1c40f; color: #1e1f22; font-size: 20px; }
 
     .channels-bar {
       width: 240px;
@@ -149,30 +110,49 @@
       justify-content: center;
       padding: 0 16px;
       font-weight: bold;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.2);
     }
 
-    .server-id-sub {
-      font-size: 10px;
-      color: #949ba4;
-      font-weight: normal;
-      user-select: all;
-    }
-
+    .server-id-sub { font-size: 10px; color: #949ba4; font-weight: normal; user-select: all; }
     .channel-list { padding: 12px 8px; flex-grow: 1; }
-
-    .channel-item {
-      padding: 6px 8px;
-      border-radius: 4px;
-      color: #949ba4;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
+    .channel-item { padding: 6px 8px; border-radius: 4px; color: #949ba4; cursor: pointer; display: flex; align-items: center; gap: 6px; }
     .channel-item.active { background-color: #35373c; color: #f2f3f5; }
 
+    /* USUARIO ABAJO A LA IZQUIERDA */
+    .user-panel {
+      height: 52px;
+      background-color: #232428;
+      display: flex;
+      align-items: center;
+      padding: 0 8px;
+      gap: 8px;
+    }
+
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background-color: #5865f2;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: bold;
+      background-size: cover;
+      background-position: center;
+    }
+
+    .user-info { flex-grow: 1; overflow: hidden; }
+    .user-info .name { font-size: 14px; font-weight: bold; white-space: nowrap; text-overflow: ellipsis; }
+    .user-info .status { font-size: 11px; color: #23a55a; }
+
+    .settings-btn {
+      cursor: pointer;
+      font-size: 18px;
+      padding: 4px;
+      border-radius: 4px;
+    }
+    .settings-btn:hover { background-color: #35373c; }
+
+    /* ÁREA DE CHAT Y VIDEO */
     .chat-area {
       flex-grow: 1;
       display: flex;
@@ -185,8 +165,37 @@
       border-bottom: 1px solid #26282c;
       display: flex;
       align-items: center;
+      justify-content: space-between;
       padding: 0 16px;
       font-weight: bold;
+    }
+
+    .call-controls { display: flex; gap: 10px; }
+    .call-btn {
+      background: #2b2d31;
+      border: none;
+      color: #b5bac1;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .call-btn:hover { background: #35373c; color: #fff; }
+
+    /* ZONA DE TRANSMISIÓN DE VIDEO */
+    #video-grid {
+      display: flex;
+      gap: 10px;
+      padding: 10px;
+      background: #1e1f22;
+      max-height: 250px;
+    }
+    video {
+      width: 50%;
+      height: 220px;
+      background: #000;
+      border-radius: 8px;
+      object-fit: cover;
     }
 
     .messages-container {
@@ -199,23 +208,10 @@
     }
 
     .message { display: flex; gap: 12px; }
-
-    .avatar {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background-color: #5865f2;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-weight: bold;
-    }
-
     .message-content h4 { font-size: 14px; color: #f2f3f5; }
     .message-content p { font-size: 14px; color: #dbdee1; margin-top: 4px; }
 
     .input-box { padding: 16px; }
-
     .input-box input {
       width: 100%;
       padding: 12px 16px;
@@ -224,6 +220,42 @@
       border-radius: 8px;
       color: #f2f3f5;
       outline: none;
+    }
+
+    /* MODAL DE AJUSTES Y NEXUS PLUS */
+    .modal {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 200;
+    }
+
+    .modal-content {
+      background: #2b2d31;
+      padding: 24px;
+      border-radius: 8px;
+      width: 450px;
+      position: relative;
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 16px; right: 16px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .plus-badge {
+      background: linear-gradient(45deg, #f1c40f, #e67e22);
+      color: #fff;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: bold;
     }
 
     .hidden { display: none !important; }
@@ -248,8 +280,9 @@
   <div id="app-container" class="hidden">
     
     <!-- Servidores -->
-    <div class="servers-bar" id="servers-bar">
+    <div class="servers-bar">
       <div class="server-icon active" title="Inicio">N</div>
+      <div class="server-icon plus-btn" onclick="openPlusModal()" title="Nexus Plus">✨</div>
       <hr style="width: 32px; border: 1px solid #35373c;">
       <div class="server-icon add-btn" onclick="createNewServer()" title="Crear Servidor">+</div>
       <div class="server-icon join-btn" onclick="joinExistingServer()" title="Unirse con ID">🔗</div>
@@ -264,13 +297,35 @@
       <div class="channel-list">
         <div class="channel-item active"># general</div>
       </div>
+
+      <!-- Panel de Usuario Abajo -->
+      <div class="user-panel">
+        <div class="avatar" id="user-avatar-preview">NX</div>
+        <div class="user-info">
+          <div class="name" id="user-display-name">Usuario</div>
+          <div class="status">En línea</div>
+        </div>
+        <div class="settings-btn" onclick="openSettings()" title="Ajustes">⚙️</div>
+      </div>
     </div>
 
     <!-- Area de Chat -->
     <div class="chat-area">
       <div class="chat-header">
-        <span style="color: #80848e;">#</span>
-        <span>general</span>
+        <div>
+          <span style="color: #80848e;">#</span>
+          <span>general</span>
+        </div>
+        <div class="call-controls">
+          <button class="call-btn" onclick="startCameraCall()">📹 Cámara</button>
+          <button class="call-btn" onclick="startScreenShare()">🖥️ Compartir Pantalla</button>
+        </div>
+      </div>
+
+      <!-- Rejilla de Video para llamadas -->
+      <div id="video-grid" class="hidden">
+        <video id="local-video" autoplay muted></video>
+        <video id="remote-video" autoplay></video>
       </div>
       
       <div class="messages-container" id="messages-box">
@@ -278,7 +333,7 @@
           <div class="avatar">NX</div>
           <div class="message-content">
             <h4>NexusBot</h4>
-            <p>¡Bienvenido a NexusChat! Haz clic en '+' para crear un servidor o en '🔗' para unirte al servidor de un amigo usando su ID.</p>
+            <p>¡Bienvenido! Haz clic en '+' para crear un servidor, en '🔗' para unirte con ID, o en '⚙️' para cambiar tu avatar.</p>
           </div>
         </div>
       </div>
@@ -290,21 +345,74 @@
 
   </div>
 
+  <!-- MODAL DE SETTINGS -->
+  <div id="settings-modal" class="modal hidden">
+    <div class="modal-content">
+      <span class="close-btn" onclick="closeSettings()">✕</span>
+      <h2>Ajustes de Usuario</h2>
+      <br>
+      <div class="form-group">
+        <label>URL de Imagen de Perfil (Avatar)</label>
+        <input type="text" id="avatar-url-input" placeholder="https://ejemplo.com/tu-foto.png">
+      </div>
+      <button class="auth-btn" onclick="saveAvatar()">Guardar Cambios</button>
+    </div>
+  </div>
+
+  <!-- MODAL DE NEXUS PLUS -->
+  <div id="plus-modal" class="modal hidden">
+    <div class="modal-content" style="text-align: center;">
+      <span class="close-btn" onclick="closePlusModal()">✕</span>
+      <h2 style="color: #f1c40f;">Nexus Plus ✨</h2>
+      <p style="margin-top: 8px;">¡Mejora tu experiencia en NexusChat!</p>
+      <br>
+      <ul style="text-align: left; margin-left: 20px; line-height: 2;">
+        <li>🚀 Emojis personalizados en todos los servidores</li>
+        <li>🎥 Transmisiones en HD a 60fps</li>
+        <li>👑 Insignia dorada exclusiva en tu perfil</li>
+        <li>📁 Subida de archivos pesados hasta 500MB</li>
+      </ul>
+      <br>
+      <button class="auth-btn" style="background: linear-gradient(45deg, #f1c40f, #e67e22);" onclick="alert('¡Gracias por apoyar a NexusChat!')">Obtener Nexus Plus ($2.99/mes)</button>
+    </div>
+  </div>
+
   <script>
     let currentUser = "";
+    let userAvatarUrl = "";
     let peer = null;
-    let connections = []; // Guardará las conexiones activas P2P
+    let connections = [];
+    let localStream = null;
 
     function login() {
       const input = document.getElementById("username-input").value.trim();
       if (input !== "") {
         currentUser = input;
+        document.getElementById("user-display-name").innerText = currentUser;
+        document.getElementById("user-avatar-preview").innerText = currentUser.substring(0, 2).toUpperCase();
         document.getElementById("auth-screen").classList.add("hidden");
         document.getElementById("app-container").classList.remove("hidden");
       }
     }
 
-    // CREAR UN SERVIDOR (El usuario actual se convierte en el Host)
+    /* MODALES */
+    function openSettings() { document.getElementById("settings-modal").classList.remove("hidden"); }
+    function closeSettings() { document.getElementById("settings-modal").classList.add("hidden"); }
+    function openPlusModal() { document.getElementById("plus-modal").classList.remove("hidden"); }
+    function closePlusModal() { document.getElementById("plus-modal").classList.add("hidden"); }
+
+    function saveAvatar() {
+      const url = document.getElementById("avatar-url-input").value.trim();
+      if (url !== "") {
+        userAvatarUrl = url;
+        const avatarBox = document.getElementById("user-avatar-preview");
+        avatarBox.style.backgroundImage = `url('${url}')`;
+        avatarBox.innerText = "";
+      }
+      closeSettings();
+    }
+
+    /* PEERJS - CREAR / UNIRSE A SERVIDORES */
     function createNewServer() {
       const serverName = prompt("Nombre del servidor:");
       if (!serverName) return;
@@ -315,22 +423,26 @@
       peer.on('open', (id) => {
         document.getElementById("current-server-name").innerText = serverName;
         document.getElementById("current-server-id").innerText = "ID: " + id;
-        addMessage("NexusBot", `Servidor '${serverName}' creado. Comparte el ID: ${id} para que tus amigos se unan.`);
+        addMessage("NexusBot", "", `Servidor '${serverName}' creado. Comparte el ID: ${id}`);
       });
 
       peer.on('connection', (conn) => {
         connections.push(conn);
         conn.on('data', (data) => {
-          addMessage(data.user, data.msg);
-          // Reenviar mensaje a los demás conectados
-          connections.forEach(c => {
-            if (c !== conn) c.send(data);
-          });
+          addMessage(data.user, data.avatar, data.msg);
+          connections.forEach(c => { if (c !== conn) c.send(data); });
+        });
+      });
+
+      peer.on('call', (call) => {
+        call.answer(localStream);
+        call.on('stream', (remoteStream) => {
+          document.getElementById("video-grid").classList.remove("hidden");
+          document.getElementById("remote-video").srcObject = remoteStream;
         });
       });
     }
 
-    // UNIRSE A UN SERVIDOR EXISTENTE CON SU ID
     function joinExistingServer() {
       const serverId = prompt("Pega el ID del servidor al que deseas unirte:");
       if (!serverId) return;
@@ -343,11 +455,19 @@
           connections.push(conn);
           document.getElementById("current-server-name").innerText = "Servidor Conectado";
           document.getElementById("current-server-id").innerText = "ID: " + serverId;
-          addMessage("NexusBot", "¡Conectado exitosamente al servidor!");
+          addMessage("NexusBot", "", "¡Conectado exitosamente al servidor!");
         });
 
         conn.on('data', (data) => {
-          addMessage(data.user, data.msg);
+          addMessage(data.user, data.avatar, data.msg);
+        });
+      });
+
+      peer.on('call', (call) => {
+        call.answer(localStream);
+        call.on('stream', (remoteStream) => {
+          document.getElementById("video-grid").classList.remove("hidden");
+          document.getElementById("remote-video").srcObject = remoteStream;
         });
       });
     }
@@ -357,11 +477,10 @@
         const input = document.getElementById("chat-input");
         const msg = input.value.trim();
         if (msg !== "") {
-          addMessage(currentUser, msg);
+          addMessage(currentUser, userAvatarUrl, msg);
           
-          // Transmitir mensaje por PeerJS
           connections.forEach(conn => {
-            conn.send({ user: currentUser, msg: msg });
+            conn.send({ user: currentUser, avatar: userAvatarUrl, msg: msg });
           });
 
           input.value = "";
@@ -369,12 +488,18 @@
       }
     }
 
-    function addMessage(user, text) {
+    function addMessage(user, avatar, text) {
       const box = document.getElementById("messages-box");
       const msgDiv = document.createElement("div");
       msgDiv.className = "message";
+
+      let avatarHtml = `<div class="avatar">${user.substring(0, 2).toUpperCase()}</div>`;
+      if (avatar) {
+        avatarHtml = `<div class="avatar" style="background-image: url('${avatar}');"></div>`;
+      }
+
       msgDiv.innerHTML = `
-        <div class="avatar">${user.substring(0, 2).toUpperCase()}</div>
+        ${avatarHtml}
         <div class="message-content">
           <h4>${user}</h4>
           <p>${text}</p>
@@ -382,6 +507,36 @@
       `;
       box.appendChild(msgDiv);
       box.scrollTop = box.scrollHeight;
+    }
+
+    /* LLAMADAS Y PANTALLA COMPARTIDA */
+    async function startCameraCall() {
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        document.getElementById("video-grid").classList.remove("hidden");
+        document.getElementById("local-video").srcObject = localStream;
+        
+        // Trasmitir llamada si hay servidor activo
+        const targetId = document.getElementById("current-server-id").innerText.replace("ID: ", "").trim();
+        if (targetId && targetId !== "Ninguno" && peer) {
+          const call = peer.call(targetId, localStream);
+          call.on('stream', (remoteStream) => {
+            document.getElementById("remote-video").srcObject = remoteStream;
+          });
+        }
+      } catch (err) {
+        alert("No se pudo acceder a la cámara/micrófono: " + err.message);
+      }
+    }
+
+    async function startScreenShare() {
+      try {
+        localStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+        document.getElementById("video-grid").classList.remove("hidden");
+        document.getElementById("local-video").srcObject = localStream;
+      } catch (err) {
+        alert("Error al compartir pantalla: " + err.message);
+      }
     }
   </script>
 </body>
