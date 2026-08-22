@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NexusChat</title>
+  <!-- PeerJS para conexiones P2P en tiempo real -->
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
   <style>
     * {
       box-sizing: border-box;
@@ -20,7 +22,7 @@
       display: flex;
     }
 
-    /* --- PANTALLA DE AUTH (LOGIN / REGISTER) --- */
+    /* PANTALLA DE LOGIN */
     #auth-screen {
       position: absolute;
       top: 0;
@@ -94,14 +96,13 @@
       background: #4752c4;
     }
 
-    /* --- INTERFAZ PRINCIPAL DE NEXUSCHAT --- */
+    /* INTERFAZ PRINCIPAL */
     #app-container {
       display: flex;
       width: 100vw;
       height: 100vh;
     }
 
-    /* 1. BARRA DE SERVIDORES */
     .servers-bar {
       width: 72px;
       background-color: #1e1f22;
@@ -125,23 +126,14 @@
       transition: all 0.2s;
     }
 
-    .server-icon:hover {
+    .server-icon:hover, .server-icon.active {
       border-radius: 16px;
       background-color: #5865f2;
     }
 
-    .add-server-btn {
-      background-color: #313338;
-      color: #23a55a;
-      font-size: 24px;
-    }
+    .add-btn { background-color: #23a55a; color: #fff; }
+    .join-btn { background-color: #4752c4; color: #fff; }
 
-    .add-server-btn:hover {
-      background-color: #23a55a;
-      color: #fff;
-    }
-
-    /* 2. BARRA DE CANALES */
     .channels-bar {
       width: 240px;
       background-color: #2b2d31;
@@ -153,16 +145,21 @@
       height: 48px;
       border-bottom: 1px solid #1f2023;
       display: flex;
-      align-items: center;
+      flex-direction: column;
+      justify-content: center;
       padding: 0 16px;
       font-weight: bold;
       box-shadow: 0 1px 2px rgba(0,0,0,0.2);
     }
 
-    .channel-list {
-      padding: 12px 8px;
-      flex-grow: 1;
+    .server-id-sub {
+      font-size: 10px;
+      color: #949ba4;
+      font-weight: normal;
+      user-select: all;
     }
+
+    .channel-list { padding: 12px 8px; flex-grow: 1; }
 
     .channel-item {
       padding: 6px 8px;
@@ -172,15 +169,10 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      margin-bottom: 2px;
     }
 
-    .channel-item:hover, .channel-item.active {
-      background-color: #35373c;
-      color: #f2f3f5;
-    }
+    .channel-item.active { background-color: #35373c; color: #f2f3f5; }
 
-    /* 3. ÁREA DE CHAT */
     .chat-area {
       flex-grow: 1;
       display: flex;
@@ -195,7 +187,6 @@
       align-items: center;
       padding: 0 16px;
       font-weight: bold;
-      gap: 8px;
     }
 
     .messages-container {
@@ -207,10 +198,7 @@
       gap: 12px;
     }
 
-    .message {
-      display: flex;
-      gap: 12px;
-    }
+    .message { display: flex; gap: 12px; }
 
     .avatar {
       width: 40px;
@@ -223,20 +211,10 @@
       font-weight: bold;
     }
 
-    .message-content h4 {
-      font-size: 14px;
-      color: #f2f3f5;
-    }
+    .message-content h4 { font-size: 14px; color: #f2f3f5; }
+    .message-content p { font-size: 14px; color: #dbdee1; margin-top: 4px; }
 
-    .message-content p {
-      font-size: 14px;
-      color: #dbdee1;
-      margin-top: 4px;
-    }
-
-    .input-box {
-      padding: 16px;
-    }
+    .input-box { padding: 16px; }
 
     .input-box input {
       width: 100%;
@@ -248,45 +226,18 @@
       outline: none;
     }
 
-    /* 4. LISTA DE MIEMBROS */
-    .members-bar {
-      width: 240px;
-      background-color: #2b2d31;
-      padding: 16px 8px;
-    }
-
-    .members-title {
-      font-size: 12px;
-      font-weight: bold;
-      color: #949ba4;
-      text-transform: uppercase;
-      margin-bottom: 8px;
-      padding-left: 8px;
-    }
-
-    .member-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 8px;
-      border-radius: 4px;
-      color: #949ba4;
-    }
-
-    .hidden {
-      display: none !important;
-    }
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
 
-  <!-- PANTALLA DE LOGIN / REGISTRO -->
+  <!-- PANTALLA DE LOGIN -->
   <div id="auth-screen">
     <div class="auth-card">
-      <h2>¡Te damos la bienvenida a NexusChat!</h2>
-      <p>Inicia sesión o crea un usuario para empezar.</p>
+      <h2>¡Bienvenido a NexusChat!</h2>
+      <p>Ingresa tu apodo para chatear en vivo.</p>
       <div class="form-group">
-        <label>Nombre de Usuario</label>
+        <label>Nombre de usuario</label>
         <input type="text" id="username-input" placeholder="Tu apodo">
       </div>
       <button class="auth-btn" onclick="login()">Entrar a NexusChat</button>
@@ -297,50 +248,43 @@
   <div id="app-container" class="hidden">
     
     <!-- Servidores -->
-    <div class="servers-bar">
-      <div class="server-icon" title="Inicio">N</div>
+    <div class="servers-bar" id="servers-bar">
+      <div class="server-icon active" title="Inicio">N</div>
       <hr style="width: 32px; border: 1px solid #35373c;">
-      <div class="server-icon active" title="Servidor Principal">GS</div>
-      <div class="server-icon add-server-btn" onclick="createServer()" title="Crear Servidor">+</div>
+      <div class="server-icon add-btn" onclick="createNewServer()" title="Crear Servidor">+</div>
+      <div class="server-icon join-btn" onclick="joinExistingServer()" title="Unirse con ID">🔗</div>
     </div>
 
     <!-- Canales -->
     <div class="channels-bar">
-      <div class="server-header" id="current-server-name">Comunidad Nexus</div>
+      <div class="server-header">
+        <span id="current-server-name">Servidor Local</span>
+        <span id="current-server-id" class="server-id-sub">ID: Ninguno</span>
+      </div>
       <div class="channel-list">
         <div class="channel-item active"># general</div>
-        <div class="channel-item"># memes</div>
       </div>
     </div>
 
-    <!-- Chat principal -->
+    <!-- Area de Chat -->
     <div class="chat-area">
       <div class="chat-header">
         <span style="color: #80848e;">#</span>
-        <span id="current-channel-name">general</span>
+        <span>general</span>
       </div>
       
       <div class="messages-container" id="messages-box">
         <div class="message">
-          <div class="avatar">SYS</div>
+          <div class="avatar">NX</div>
           <div class="message-content">
             <h4>NexusBot</h4>
-            <p>¡Bienvenido a NexusChat! Este es el canal general.</p>
+            <p>¡Bienvenido a NexusChat! Haz clic en '+' para crear un servidor o en '🔗' para unirte al servidor de un amigo usando su ID.</p>
           </div>
         </div>
       </div>
 
       <div class="input-box">
-        <input type="text" id="chat-input" placeholder="Enviar mensaje a #general..." onkeypress="handleKeyPress(event)">
-      </div>
-    </div>
-
-    <!-- Lista de miembros -->
-    <div class="members-bar">
-      <div class="members-title">En línea — 1</div>
-      <div class="member-item">
-        <div class="avatar" style="width: 32px; height: 32px; font-size: 12px;">U</div>
-        <span id="user-display-name">Usuario</span>
+        <input type="text" id="chat-input" placeholder="Enviar mensaje..." onkeypress="handleKeyPress(event)">
       </div>
     </div>
 
@@ -348,15 +292,64 @@
 
   <script>
     let currentUser = "";
+    let peer = null;
+    let connections = []; // Guardará las conexiones activas P2P
 
     function login() {
       const input = document.getElementById("username-input").value.trim();
       if (input !== "") {
         currentUser = input;
-        document.getElementById("user-display-name").innerText = currentUser;
         document.getElementById("auth-screen").classList.add("hidden");
         document.getElementById("app-container").classList.remove("hidden");
       }
+    }
+
+    // CREAR UN SERVIDOR (El usuario actual se convierte en el Host)
+    function createNewServer() {
+      const serverName = prompt("Nombre del servidor:");
+      if (!serverName) return;
+
+      const randomId = "nexus-" + Math.random().toString(36).substring(2, 8);
+      peer = new Peer(randomId);
+
+      peer.on('open', (id) => {
+        document.getElementById("current-server-name").innerText = serverName;
+        document.getElementById("current-server-id").innerText = "ID: " + id;
+        addMessage("NexusBot", `Servidor '${serverName}' creado. Comparte el ID: ${id} para que tus amigos se unan.`);
+      });
+
+      peer.on('connection', (conn) => {
+        connections.push(conn);
+        conn.on('data', (data) => {
+          addMessage(data.user, data.msg);
+          // Reenviar mensaje a los demás conectados
+          connections.forEach(c => {
+            if (c !== conn) c.send(data);
+          });
+        });
+      });
+    }
+
+    // UNIRSE A UN SERVIDOR EXISTENTE CON SU ID
+    function joinExistingServer() {
+      const serverId = prompt("Pega el ID del servidor al que deseas unirte:");
+      if (!serverId) return;
+
+      peer = new Peer();
+
+      peer.on('open', () => {
+        const conn = peer.connect(serverId);
+        conn.on('open', () => {
+          connections.push(conn);
+          document.getElementById("current-server-name").innerText = "Servidor Conectado";
+          document.getElementById("current-server-id").innerText = "ID: " + serverId;
+          addMessage("NexusBot", "¡Conectado exitosamente al servidor!");
+        });
+
+        conn.on('data', (data) => {
+          addMessage(data.user, data.msg);
+        });
+      });
     }
 
     function handleKeyPress(e) {
@@ -365,6 +358,12 @@
         const msg = input.value.trim();
         if (msg !== "") {
           addMessage(currentUser, msg);
+          
+          // Transmitir mensaje por PeerJS
+          connections.forEach(conn => {
+            conn.send({ user: currentUser, msg: msg });
+          });
+
           input.value = "";
         }
       }
@@ -383,13 +382,6 @@
       `;
       box.appendChild(msgDiv);
       box.scrollTop = box.scrollHeight;
-    }
-
-    function createServer() {
-      const serverName = prompt("Nombre del nuevo servidor:");
-      if (serverName) {
-        alert("Servidor local '" + serverName + "' creado.");
-      }
     }
   </script>
 </body>
