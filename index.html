@@ -93,6 +93,7 @@
     .join-btn { background-color: #4752c4; color: #fff; }
     .plus-btn { background-color: #f1c40f; color: #1e1f22; font-size: 20px; }
     .friends-btn { background-color: #e91e63; color: #fff; font-size: 18px; }
+    .help-btn { background-color: #0017a8; color: #fff; font-size: 18px; }
 
     .channels-bar {
       width: 240px;
@@ -237,7 +238,9 @@
       background: #2b2d31;
       padding: 24px;
       border-radius: 8px;
-      width: 480px;
+      width: 520px;
+      max-height: 85vh;
+      overflow-y: auto;
       position: relative;
     }
 
@@ -257,6 +260,18 @@
       color: #23a55a;
       word-break: break-all;
       margin-top: 6px;
+    }
+
+    .code-block {
+      background: #1e1f22;
+      padding: 12px;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 11px;
+      color: #00d26a;
+      white-space: pre-wrap;
+      word-break: break-all;
+      margin-top: 8px;
     }
 
     .hidden { display: none !important; }
@@ -285,6 +300,7 @@
       <div class="server-icon active" title="Inicio">N</div>
       <div class="server-icon friends-btn" onclick="openFriendsModal()" title="Amigos">👥</div>
       <div class="server-icon plus-btn" onclick="openPlusModal()" title="Nexus Plus">✨</div>
+      <div class="server-icon help-btn" onclick="openHelpModal()" title="Tutoriales y Ayuda">❓</div>
       <hr style="width: 32px; border: 1px solid #35373c;">
       <div class="server-icon add-btn" onclick="createNewServer()" title="Crear Servidor">+</div>
       <div class="server-icon join-btn" onclick="joinExistingServer()" title="Unirse con ID">🔗</div>
@@ -335,7 +351,7 @@
           <div class="avatar">NX</div>
           <div class="message-content">
             <h4>NexusBot</h4>
-            <p>¡Bienvenido! Haz clic en '+' para crear un servidor, en '🔗' para unirte con ID, o en '⚙️' para cambiar tu avatar o configurar tu Bot API Key.</p>
+            <p>¡Bienvenido! Haz clic en '+' para crear un servidor, en '🔗' para unirte con ID, o en '❓' para ver el tutorial de uso y creación de Bots.</p>
           </div>
         </div>
       </div>
@@ -412,6 +428,51 @@
     </div>
   </div>
 
+  <!-- MODAL DE TUTORIAL Y AYUDA -->
+  <div id="help-modal" class="modal hidden">
+    <div class="modal-content">
+      <span class="close-btn" onclick="closeHelpModal()">✕</span>
+      <h2>Guía y Tutoriales de NexusChat ❓</h2>
+      <br>
+      
+      <div style="line-height: 1.6; font-size: 14px; color: #dbdee1;">
+        <b style="color: #5865f2;">1. ¿Cómo chatear con otras personas?</b>
+        <p>• Haz clic en el botón verde <b>+</b> para crear un servidor. Copia el ID que se genera en la esquina superior izquierda.</p>
+        <p>• Pásale ese ID a tus amigos. Ellos deben pulsar el botón azul <b>🔗</b> e ingresar ese ID para unirse a tu sala en tiempo real.</p>
+        <br>
+
+        <b style="color: #23a55a;">2. ¿Cómo hacer videollamadas o compartir pantalla?</b>
+        <p>• Una vez conectado en una sala, pulsa en <b>📹 Cámara</b> o <b>🖥️ Compartir Pantalla</b> arriba a la derecha. Ambas transmisiones llegarán vía WebRTC directa a la otra persona.</p>
+        <br>
+
+        <b style="color: #f1c40f;">3. ¿Cómo crear y conectar un Bot en Python?</b>
+        <p>• Ve a Ajustes (⚙️) y copia tu <b>NexusBot API Key</b>.</p>
+        <p>• Instala la librería en tu consola de comandos:</p>
+        <div class="code-block">pip install websocket-client</div>
+        <p style="margin-top: 8px;">• Ejecuta este código en tu PC guardándolo como <code>bot.py</code>:</p>
+        <div class="code-block">import json, websocket
+
+BOT_NAME = "NexusBot 🤖"
+TARGET_ID = "PEGA_AQUI_EL_ID_DEL_SERVIDOR"
+
+def on_message(ws, msg):
+    data = json.loads(msg)
+    if "msg" in data and data["msg"] == "!ping":
+        ws.send(json.dumps({
+            "type": "data",
+            "user": BOT_NAME,
+            "msg": "pong! 🏓"
+        }))
+
+ws = websocket.WebSocketApp(
+    f"wss://0.peerjs.com/peerjs?key=peerjs&id=bot-{TARGET_ID}",
+    on_message=on_message
+)
+ws.run_forever()</div>
+      </div>
+    </div>
+  </div>
+
   <script>
     let currentUser = "";
     let userAvatarUrl = "";
@@ -439,6 +500,8 @@
     function closePlusModal() { document.getElementById("plus-modal").classList.add("hidden"); }
     function openFriendsModal() { document.getElementById("friends-modal").classList.remove("hidden"); }
     function closeFriendsModal() { document.getElementById("friends-modal").classList.add("hidden"); }
+    function openHelpModal() { document.getElementById("help-modal").classList.remove("hidden"); }
+    function closeHelpModal() { document.getElementById("help-modal").classList.add("hidden"); }
 
     /* GUARDAR FOTO DE PERFIL (URL O ARCHIVO LOCAL) */
     function saveAvatar() {
