@@ -25,10 +25,8 @@
     /* PANTALLA DE LOGIN */
     #auth-screen {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
       background: #1e1f22;
       display: flex;
       justify-content: center;
@@ -94,6 +92,7 @@
     .add-btn { background-color: #23a55a; color: #fff; }
     .join-btn { background-color: #4752c4; color: #fff; }
     .plus-btn { background-color: #f1c40f; color: #1e1f22; font-size: 20px; }
+    .friends-btn { background-color: #e91e63; color: #fff; font-size: 18px; }
 
     .channels-bar {
       width: 240px;
@@ -222,7 +221,7 @@
       outline: none;
     }
 
-    /* MODAL DE AJUSTES Y NEXUS PLUS */
+    /* MODALES */
     .modal {
       position: absolute;
       top: 0; left: 0;
@@ -238,7 +237,7 @@
       background: #2b2d31;
       padding: 24px;
       border-radius: 8px;
-      width: 450px;
+      width: 480px;
       position: relative;
     }
 
@@ -249,13 +248,15 @@
       font-weight: bold;
     }
 
-    .plus-badge {
-      background: linear-gradient(45deg, #f1c40f, #e67e22);
-      color: #fff;
-      padding: 2px 8px;
-      border-radius: 12px;
-      font-size: 10px;
-      font-weight: bold;
+    .token-box {
+      background: #1e1f22;
+      padding: 10px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 12px;
+      color: #23a55a;
+      word-break: break-all;
+      margin-top: 6px;
     }
 
     .hidden { display: none !important; }
@@ -282,6 +283,7 @@
     <!-- Servidores -->
     <div class="servers-bar">
       <div class="server-icon active" title="Inicio">N</div>
+      <div class="server-icon friends-btn" onclick="openFriendsModal()" title="Amigos">👥</div>
       <div class="server-icon plus-btn" onclick="openPlusModal()" title="Nexus Plus">✨</div>
       <hr style="width: 32px; border: 1px solid #35373c;">
       <div class="server-icon add-btn" onclick="createNewServer()" title="Crear Servidor">+</div>
@@ -333,7 +335,7 @@
           <div class="avatar">NX</div>
           <div class="message-content">
             <h4>NexusBot</h4>
-            <p>¡Bienvenido! Haz clic en '+' para crear un servidor, en '🔗' para unirte con ID, o en '⚙️' para cambiar tu avatar.</p>
+            <p>¡Bienvenido! Haz clic en '+' para crear un servidor, en '🔗' para unirte con ID, o en '⚙️' para cambiar tu avatar o configurar tu Bot API Key.</p>
           </div>
         </div>
       </div>
@@ -351,11 +353,44 @@
       <span class="close-btn" onclick="closeSettings()">✕</span>
       <h2>Ajustes de Usuario</h2>
       <br>
+      
+      <!-- CAMBIAR FOTO URL / ARCHIVO LOCAL -->
       <div class="form-group">
-        <label>URL de Imagen de Perfil (Avatar)</label>
+        <label>URL de Imagen de Perfil</label>
         <input type="text" id="avatar-url-input" placeholder="https://ejemplo.com/tu-foto.png">
       </div>
-      <button class="auth-btn" onclick="saveAvatar()">Guardar Cambios</button>
+      <div class="form-group">
+        <label>O subir archivo local (PNG, JPG, GIF, WebP)</label>
+        <input type="file" id="avatar-file-input" accept="image/*" style="background:none; border:none; color:#b5bac1;">
+      </div>
+      <button class="auth-btn" onclick="saveAvatar()">Guardar Avatar</button>
+
+      <hr style="border: 1px solid #35373c; margin: 20px 0;">
+
+      <!-- CREAR BOT DE DISCORD / API KEY -->
+      <h2>NexusBot API Key 🤖</h2>
+      <p style="font-size:12px; color:#b5bac1; margin-top:4px;">Usa esta clave para conectar tu script de Python a NexusChat:</p>
+      <div class="token-box" id="bot-api-key">nexus_bot_key_loading...</div>
+      <br>
+      <button class="auth-btn" style="background:#23a55a;" onclick="generateBotKey()">Generar Nueva API Key</button>
+    </div>
+  </div>
+
+  <!-- MODAL DE AMIGOS -->
+  <div id="friends-modal" class="modal hidden">
+    <div class="modal-content">
+      <span class="close-btn" onclick="closeFriendsModal()">✕</span>
+      <h2>Lista de Amigos 👥</h2>
+      <br>
+      <div class="form-group">
+        <label>Agregar Amigo (Ingresa su ID de PeerJS)</label>
+        <input type="text" id="friend-id-input" placeholder="nexus-xxxxxx">
+      </div>
+      <button class="auth-btn" onclick="addFriend()">Agregar Amigo</button>
+      <br><br>
+      <div id="friends-list" style="font-size: 14px; color: #dbdee1;">
+        <p style="color:#80848e;">No tienes amigos agregados todavía.</p>
+      </div>
     </div>
   </div>
 
@@ -382,6 +417,7 @@
     let userAvatarUrl = "";
     let peer = null;
     let connections = [];
+    let friends = [];
     let localStream = null;
 
     function login() {
@@ -392,6 +428,7 @@
         document.getElementById("user-avatar-preview").innerText = currentUser.substring(0, 2).toUpperCase();
         document.getElementById("auth-screen").classList.add("hidden");
         document.getElementById("app-container").classList.remove("hidden");
+        generateBotKey();
       }
     }
 
@@ -400,19 +437,60 @@
     function closeSettings() { document.getElementById("settings-modal").classList.add("hidden"); }
     function openPlusModal() { document.getElementById("plus-modal").classList.remove("hidden"); }
     function closePlusModal() { document.getElementById("plus-modal").classList.add("hidden"); }
+    function openFriendsModal() { document.getElementById("friends-modal").classList.remove("hidden"); }
+    function closeFriendsModal() { document.getElementById("friends-modal").classList.add("hidden"); }
 
+    /* GUARDAR FOTO DE PERFIL (URL O ARCHIVO LOCAL) */
     function saveAvatar() {
-      const url = document.getElementById("avatar-url-input").value.trim();
-      if (url !== "") {
-        userAvatarUrl = url;
-        const avatarBox = document.getElementById("user-avatar-preview");
-        avatarBox.style.backgroundImage = `url('${url}')`;
-        avatarBox.innerText = "";
+      const urlInput = document.getElementById("avatar-url-input").value.trim();
+      const fileInput = document.getElementById("avatar-file-input").files[0];
+
+      if (fileInput) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          userAvatarUrl = e.target.result;
+          applyAvatar(userAvatarUrl);
+        };
+        reader.readAsDataURL(fileInput);
+      } else if (urlInput !== "") {
+        userAvatarUrl = urlInput;
+        applyAvatar(userAvatarUrl);
       }
       closeSettings();
     }
 
-    /* PEERJS - CREAR / UNIRSE A SERVIDORES */
+    function applyAvatar(src) {
+      const avatarBox = document.getElementById("user-avatar-preview");
+      avatarBox.style.backgroundImage = `url('${src}')`;
+      avatarBox.innerText = "";
+    }
+
+    /* GENERAR BOT API KEY */
+    function generateBotKey() {
+      const key = "nx_bot_" + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      document.getElementById("bot-api-key").innerText = key;
+    }
+
+    /* SISTEMA DE AMIGOS */
+    function addFriend() {
+      const id = document.getElementById("friend-id-input").value.trim();
+      if (id && !friends.includes(id)) {
+        friends.push(id);
+        renderFriends();
+        document.getElementById("friend-id-input").value = "";
+      }
+    }
+
+    function renderFriends() {
+      const container = document.getElementById("friends-list");
+      if (friends.length === 0) {
+        container.innerHTML = `<p style="color:#80848e;">No tienes amigos agregados todavía.</p>`;
+        return;
+      }
+      container.innerHTML = friends.map(f => `<div style="padding: 6px 0; border-bottom: 1px solid #35373c;">🟢 <b>${f}</b></div>`).join('');
+    }
+
+    /* PEERJS - SERVIDORES Y MENSAJES */
     function createNewServer() {
       const serverName = prompt("Nombre del servidor:");
       if (!serverName) return;
@@ -426,21 +504,7 @@
         addMessage("NexusBot", "", `Servidor '${serverName}' creado. Comparte el ID: ${id}`);
       });
 
-      peer.on('connection', (conn) => {
-        connections.push(conn);
-        conn.on('data', (data) => {
-          addMessage(data.user, data.avatar, data.msg);
-          connections.forEach(c => { if (c !== conn) c.send(data); });
-        });
-      });
-
-      peer.on('call', (call) => {
-        call.answer(localStream);
-        call.on('stream', (remoteStream) => {
-          document.getElementById("video-grid").classList.remove("hidden");
-          document.getElementById("remote-video").srcObject = remoteStream;
-        });
-      });
+      listenPeerEvents();
     }
 
     function joinExistingServer() {
@@ -460,6 +524,20 @@
 
         conn.on('data', (data) => {
           addMessage(data.user, data.avatar, data.msg);
+        });
+      });
+
+      listenPeerEvents();
+    }
+
+    function listenPeerEvents() {
+      if (!peer) return;
+
+      peer.on('connection', (conn) => {
+        connections.push(conn);
+        conn.on('data', (data) => {
+          addMessage(data.user, data.avatar, data.msg);
+          connections.forEach(c => { if (c !== conn) c.send(data); });
         });
       });
 
@@ -509,21 +587,11 @@
       box.scrollTop = box.scrollHeight;
     }
 
-    /* LLAMADAS Y PANTALLA COMPARTIDA */
+    /* TRANSMISIÓN DE CÁMARA Y PANTALLA COMPARTIDA */
     async function startCameraCall() {
       try {
         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        document.getElementById("video-grid").classList.remove("hidden");
-        document.getElementById("local-video").srcObject = localStream;
-        
-        // Trasmitir llamada si hay servidor activo
-        const targetId = document.getElementById("current-server-id").innerText.replace("ID: ", "").trim();
-        if (targetId && targetId !== "Ninguno" && peer) {
-          const call = peer.call(targetId, localStream);
-          call.on('stream', (remoteStream) => {
-            document.getElementById("remote-video").srcObject = remoteStream;
-          });
-        }
+        setupLocalStream(localStream);
       } catch (err) {
         alert("No se pudo acceder a la cámara/micrófono: " + err.message);
       }
@@ -531,12 +599,24 @@
 
     async function startScreenShare() {
       try {
-        localStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-        document.getElementById("video-grid").classList.remove("hidden");
-        document.getElementById("local-video").srcObject = localStream;
+        localStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+        setupLocalStream(localStream);
       } catch (err) {
         alert("Error al compartir pantalla: " + err.message);
       }
+    }
+
+    function setupLocalStream(stream) {
+      document.getElementById("video-grid").classList.remove("hidden");
+      document.getElementById("local-video").srcObject = stream;
+
+      // Realizar llamada saliente a los peers conectados
+      connections.forEach(conn => {
+        const call = peer.call(conn.peer, stream);
+        call.on('stream', (remoteStream) => {
+          document.getElementById("remote-video").srcObject = remoteStream;
+        });
+      });
     }
   </script>
 </body>
